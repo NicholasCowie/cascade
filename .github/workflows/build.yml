@@ -1,0 +1,61 @@
+name: Build
+
+# PyInstaller cannot cross-compile: a Windows .exe has to be produced on
+# Windows and a macOS .app on macOS.  This matrix is the only practical way to
+# produce all three from one machine.
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --all-groups
+      - run: uv run pytest -q
+
+  build:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: cascade-linux
+          - os: windows-latest
+            artifact: cascade-windows
+          - os: macos-latest
+            artifact: cascade-macos
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - run: uv sync --all-groups
+
+      - name: Build
+        run: uv run pyinstaller cascade.spec --noconfirm --log-level WARN
+
+      # Proves the bundle can import scipy and pyarrow, integrate, and write a
+      # result file -- the failures that only show up after packaging.  Without
+      # pyarrow every table renders empty rather than erroring, so a build that
+      # merely starts is not evidence of a working build.
+      - name: Self-test the bundle
+        working-directory: dist/cascade
+        shell: bash
+        run: ./cascade --selftest
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/cascade
+          retention-days: 30

@@ -1,5 +1,15 @@
 """Plotly figures for the cascade app.
 
+The main figure is a 4x3 grid.  Rows 1-2 are concentrations, one panel per
+magnitude band, laid out so the two mirrored stages read as the same picture
+twice: complexes | free enzyme | stage output.  Rows 3-4 are rates of change,
+grouped strictly by magnitude because they span seven orders and do not follow
+the concentration groupings -- dA/dt and dEAact/dt both belong to stage 1 yet
+differ by a factor of 15,000.  One cell of the last row is left empty.
+
+A sweep gets its own figure: key readouts overlaid across every dose, plus the
+dose-response curve of C at the final time.
+
 Colours come from the validated data-viz palette.  Two encodings are in play:
 
 * **Categorical** -- species identity within a panel.  Slots are assigned by

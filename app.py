@@ -1,6 +1,12 @@
 """Cascade simulator -- browser front end.
 
-Run with:  uv run streamlit run app.py
+From a source checkout::
+
+    uv run streamlit run app.py     # or: uv run main.py
+
+In a packaged build this script is launched by ``launcher.py`` instead, which
+starts the server and opens a browser.  Saved runs go beside the executable --
+see ``cascade/paths.py``.
 """
 
 from __future__ import annotations

@@ -1,4 +1,11 @@
-"""Integrating the cascade: single runs and A0 sweeps."""
+"""Integrating the cascade, and differentiating it.
+
+``run_single`` and ``run_sweep`` integrate the seven-state system and return
+every species, with E and F recovered from their balances.  ``rates`` gives the
+rate of change of all nine species, evaluated from the model at each stored
+timepoint rather than by differencing the solution -- differencing would smear
+the binding transient at t = 0, which decays well inside one output step.
+"""
 
 from __future__ import annotations
 

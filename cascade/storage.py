@@ -29,9 +29,13 @@ from pathlib import Path
 import pandas as pd
 import tomli_w
 
+from . import paths
 from .params import CATEGORIES, ParameterSet
 
-RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
+# Resolved once at import: whether the app is frozen cannot change at runtime.
+# In a PyInstaller build this points beside the executable rather than into the
+# bundle's temporary unpack directory -- see cascade/paths.py.
+RESULTS_DIR = paths.results_dir()
 SCHEMA_VERSION = 1
 
 _UNSAFE = re.compile(r"[^A-Za-z0-9._-]+")
