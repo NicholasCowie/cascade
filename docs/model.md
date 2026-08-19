@@ -87,10 +87,15 @@ dF/dt = -(dFB/dt + dFBact/dt)
 E and F can no longer drift, because nothing integrates them. Measured against
 a tight-tolerance `Radau` reference:
 
-| Quantity | Nine integrated states | Seven states + balances |
+| Quantity (at the defaults) | Nine integrated states | Seven states + balances |
 |---|---|---|
-| `F + FB + FBact` residual | 5.5 × 10⁻¹¹ | 1.8 × 10⁻¹² |
-| `E + EA + EAact` residual | — | exactly 0.0 |
+| `F + FB + FBact` residual | 1.1 × 10⁻¹³ | 7.1 × 10⁻¹⁵ |
+| `E + EA + EAact` residual | 1.1 × 10⁻¹³ | 7.1 × 10⁻¹⁵ |
+
+7.1 × 10⁻¹⁵ on a value of 40 is one bit of double precision — the rounding in
+`F0 - FB - FBact` itself, and the floor for this representation. The margin is
+wider the harder the problem: at `Cascade.m`'s `E0 = F0 = 10000` the integrated
+system drifts to 5.5 × 10⁻¹¹ against 1.8 × 10⁻¹² for the balances.
 
 The two systems agree to ~10⁻⁸ relative on every species
 (`test_reduced_solution_matches_the_original_nine_state_system`), so the
@@ -116,31 +121,59 @@ missing.
 
 ## Default parameters
 
-Carried over verbatim from `Cascade.m`, and editable in
-[`cascade/defaults.toml`](../cascade/defaults.toml):
+Editable in [`cascade/defaults.toml`](../cascade/defaults.toml). The rate
+constants, time grid and sweep are `Cascade.m`'s, unchanged; **the enzyme
+concentrations are not** — see below.
 
 | Parameter | Value | Unit | Meaning |
 |---|---|---|---|
-| `A0` | 20 | pmol/L | initial analyte |
-| `E0`, `F0` | 10000 | pmol/L | initial enzymes |
+| `A0` | 20 | pM | initial analyte |
+| `E0` | 35 | pM | initial enzyme E |
+| `F0` | 40 | pM | initial enzyme F |
 | `k1f`, `k4f` | ln2/120 ≈ 5.776×10⁻³ | L/(pmol·s) | association |
 | `k2f`, `k5f` | ln2/180 ≈ 3.851×10⁻³ | 1/s | activation |
 | `k3`, `k6` | 0.1 | 1/s | production |
 | `k1b`, `k2b`, `k4b`, `k5b` | 0 | 1/s | reverse steps |
 | time | 0 … 600, 601 points | s | |
-| sweep | A0 = 0 : 5 : 40 | pmol/L | |
+| sweep | A0 = 0 : 5 : 40 | pM | |
+
+(pM and pmol/L are the same unit. The tables display `pmol/L`.)
 
 **Units correction.** `Cascade.m:4` labels all ten rate constants `1/s`. But
 `k1f` and `k4f` multiply a *product of two concentrations*, so dimensional
 consistency requires `L/(pmol·s)`; the other eight are `1/s`. The app displays
-the corrected units. **The numbers are unchanged.**
+the corrected units. **The rate values are unchanged.**
+
+### The enzyme concentrations change the regime
+
+`Cascade.m` starts both enzymes at 10000 pmol/L against a 20 pmol/L dose — a
+500-fold excess, so the enzymes are effectively constant and every step is
+pseudo-first-order in the analyte. The defaults here put them at 35 and 40 pM,
+*comparable to the dose*, which makes them limiting and changes the behaviour
+qualitatively:
+
+| | `E0 = F0 = 10000` (Cascade.m) | `E0 = 35`, `F0 = 40` (default) |
+|---|---|---|
+| C at 600 s | 7030 pM (352× amplification) | 1156 pM (58×) |
+| Messenger B | 0.034 pM — consumed as fast as made | 679 pM — accumulates |
+| Free F at 600 s | 9268 pM, barely touched | 0 — fully consumed by t ≈ 150 s |
+| Dose response | near-linear in A0 | saturating |
+| Initial `dA/dt` | −1155 pM/s | −4.04 pM/s |
+
+The saturation is the point of interest: once F is exhausted the second stage
+cannot turn any more B into C, so B piles up and C plateaus. Doubling the dose
+from 20 to 40 pM raises C at 600 s only from 1156 to 1217 pM.
 
 ## Integration
 
 `ode15s` becomes `scipy.integrate.solve_ivp(method="LSODA")`, which likewise
-switches between stiff and non-stiff methods internally. The system is genuinely
-stiff: with the default rates, `k1f·A·E ≈ 1155 pmol/L/s` at t = 0, so A is
-consumed within milliseconds, while C accrues over minutes.
+switches between stiff and non-stiff methods internally.
+
+How stiff the system is depends on those enzyme concentrations. At the defaults
+it is mild — `k1f·A·E ≈ 4.04 pM/s` at t = 0, and A takes about 5 s to halve. At
+`Cascade.m`'s `E0 = 10000` the same expression is 1155 pM/s and binding finishes
+within milliseconds while C accrues over minutes, so the solver must span both
+timescales. LSODA handles either without configuration.
 
 Defaults are `rtol=1e-8`, `atol=1e-10`; the app exposes the method and tolerance
 in the sidebar. `test_lsoda_agrees_with_a_stiff_reference` pins LSODA against
@@ -149,23 +182,29 @@ tight-tolerance `Radau`.
 ## Rates of change
 
 `simulate.rates` evaluates `rhs` at each stored timepoint rather than
-differencing the solution. This matters at t = 0: the true `dA/dt` is
-−1155 pmol/L/s, but differencing over the 1 s output step reports only −20,
-because A is gone long before the next sample. Differencing understates the
-transient by a factor of 58.
+differencing the solution, so every value is exact rather than an approximation
+whose error depends on the output spacing.
 
-Rates span seven orders of magnitude, and the bands do **not** follow the
-concentration groupings — `dA/dt` and `dEAact/dt` both belong to stage 1 yet
-differ by 15,000×:
+At the defaults, differencing would be a fair approximation. It stops being one
+as soon as a transient is faster than the output step: at `E0 = 10000` the true
+`dA/dt` at t = 0 is −1155 pM/s, while differencing over the 1 s step reports
+−20 — an understatement of 58×, because A is gone long before the next sample.
+`test_differencing_would_flatten_a_stiff_transient` pins that case.
 
-| Band | Species | Peak \|rate\| (pmol/L/s) |
+Rates do **not** follow the concentration groupings. `dA/dt` and `dEAact/dt`
+both belong to stage 1, yet they differ by 60× at the defaults and by four
+orders of magnitude when the enzymes are in excess:
+
+| Band | Species | Peak \|rate\| (pM/s) |
 |---|---|---|
-| 10³ | `dA/dt`, `dE/dt`, `dEA/dt` | 1155 (a t = 0 transient) |
-| 10¹ | `dC/dt` | 38.3 |
-| 10⁰ | `dF/dt`, `dFBact/dt`, `dFB/dt` | 1.8 / 1.34 / 0.74 |
-| 10⁻² | `dEAact/dt` | 0.077 |
-| 10⁻⁴ | `dB/dt` | 0.000133 |
+| 10⁰ | `dA/dt`, `dE/dt`, `dEA/dt` | 4.04 |
+| 10⁰ | `dC/dt` | 3.44 |
+| 10⁰ | `dB/dt` | 1.80 |
+| 10⁻¹ | `dF/dt`, `dFB/dt`, `dFBact/dt` | 0.45 / 0.37 / 0.12 |
+| 10⁻² | `dEAact/dt` | 0.068 |
 
-This is why the rate panels are grouped by magnitude and need two rows: five
-bands do not fit in three panels without something being flattened onto the
-baseline.
+This is why the rate panels are grouped by magnitude across two rows rather than
+by stage. At the defaults the total spread is only 60×, but the grouping has to
+hold for whatever `E0` and `F0` the user sets — at `Cascade.m`'s values the same
+nine rates span seven orders, and five distinct bands do not fit in three panels
+without something being flattened onto the baseline.

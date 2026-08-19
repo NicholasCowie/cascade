@@ -22,7 +22,8 @@ def metadata():
     return load_defaults()[1]
 
 
-def test_defaults_match_the_matlab_script(params):
+def test_kinetics_and_time_match_the_matlab_script(params):
+    """The rate constants, time grid and sweep are Cascade.m's, unchanged."""
     import numpy as np
 
     assert params.k == pytest.approx(
@@ -31,9 +32,17 @@ def test_defaults_match_the_matlab_script(params):
             np.log(2) / 120, 0.0, np.log(2) / 180, 0.0, 0.1,
         ]
     )
-    assert params.boundary == {"A0": 20.0, "E0": 10000.0, "F0": 10000.0}
     assert params.time["t_start"] == 0.0 and params.time["t_end"] == 600.0
     assert params.sweep_values() == [0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0, 40.0]
+
+
+def test_boundary_defaults_deliberately_differ_from_the_matlab_script(params):
+    """Cascade.m starts both enzymes at 10000 pmol/L, far above the analyte.
+    The project defaults put them at 35 and 40 pM instead -- comparable to the
+    20 pM dose, so the enzymes are limiting and the cascade saturates.  Pinned
+    here because that choice changes the regime, not just some numbers.
+    """
+    assert params.boundary == {"A0": 20.0, "E0": 35.0, "F0": 40.0}
 
 
 def test_every_parameter_has_a_unit_and_description(metadata):

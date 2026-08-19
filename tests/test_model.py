@@ -188,11 +188,43 @@ def test_rates_are_exact_not_differenced(params):
     assert rate["dC_dt"].to_numpy()[interior] == pytest.approx(
         differenced[interior], abs=1e-3
     )
-    # At t=0 the exact rate is -1155 pmol/L/s, while differencing over the 1 s
-    # output step reports only -20: A is gone long before the next sample.
-    assert abs(rate["dA_dt"].iloc[0]) > 50 * abs(
-        np.gradient(frame["A"].to_numpy(), frame["time_s"].to_numpy())[0]
-    ), "differencing would flatten the binding transient at t=0"
+    # Exactness is the real property: every value equals the model evaluated
+    # at that state, to machine precision.
+    state = frame[list(STATE)].to_numpy()
+    direct = expand_rates(
+        np.array(
+            [
+                rhs(t, x, params.k, params.boundary["E0"], params.boundary["F0"])
+                for t, x in zip(frame["time_s"], state)
+            ]
+        )
+    )
+    for index, species in enumerate(SPECIES):
+        assert rate[f"d{species}_dt"].to_numpy() == pytest.approx(
+            direct[:, index], abs=0.0, rel=0.0
+        ), species
+
+
+def test_differencing_would_flatten_a_stiff_transient():
+    """Why rates are evaluated rather than differenced.
+
+    How wrong differencing is depends on the regime.  At the project defaults
+    the enzymes are scarce and the transient is mild, so it barely matters --
+    but raise E0 to the 10000 pmol/L of Cascade.m and binding finishes far
+    inside one output step, where differencing understates the initial rate by
+    almost two orders of magnitude.
+    """
+    params = load_defaults()[0]
+    stiff = params.with_category(
+        "boundary", {**params.boundary, "E0": 10000.0, "F0": 10000.0}
+    )
+
+    frame = run_single(stiff)
+    exact = rates(frame, stiff)["dA_dt"].iloc[0]
+    differenced = np.gradient(frame["A"].to_numpy(), frame["time_s"].to_numpy())[0]
+
+    assert exact == pytest.approx(-1155.2, rel=1e-3)
+    assert abs(exact) > 50 * abs(differenced)
 
 
 def test_derived_rates_match_the_balances(params):

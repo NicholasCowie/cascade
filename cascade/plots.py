@@ -3,9 +3,10 @@
 The main figure is a 4x3 grid.  Rows 1-2 are concentrations, one panel per
 magnitude band, laid out so the two mirrored stages read as the same picture
 twice: complexes | free enzyme | stage output.  Rows 3-4 are rates of change,
-grouped strictly by magnitude because they span seven orders and do not follow
-the concentration groupings -- dA/dt and dEAact/dt both belong to stage 1 yet
-differ by a factor of 15,000.  One cell of the last row is left empty.
+grouped strictly by magnitude, because they do not follow the concentration
+groupings: dA/dt and dEAact/dt both belong to stage 1 yet differ by 60x at the
+defaults, and by 15,000x once the enzymes are in excess.  One cell of the last
+row is left empty.
 
 A sweep gets its own figure: key readouts overlaid across every dose, plus the
 dose-response curve of C at the final time.
@@ -101,12 +102,13 @@ class Panel(NamedTuple):
     species: tuple[str, ...]
 
 
-# Cascade.m:35-38 puts A and E on one pair of axes, but E is ~10^4 while A, EA
-# and EAact are ~10^1, so on a linear scale three of the four curves collapse
-# onto the baseline.  Two magnitudes belong in two charts, never on two y-axes,
-# so rows 1-2 give every panel a single order of magnitude.  The rows are the
-# two mirrored stages and the columns line up their counterparts:
-# complexes | free enzyme | stage output.
+# Cascade.m:35-38 puts A and E on one pair of axes.  That is safe only while
+# they are the same size: at Cascade.m's own E0 of 10000 pmol/L, E dwarfs A, EA
+# and EAact by 500x and three of the four curves collapse onto the baseline.
+# Two magnitudes belong in two charts, never on two y-axes, so rows 1-2 give
+# every panel a single order of magnitude and stay readable whatever E0 and F0
+# the user sets.  The rows are the two mirrored stages and the columns line up
+# their counterparts: complexes | free enzyme | stage output.
 PANELS: tuple[Panel, ...] = (
     Panel(1, 1, "Stage 1 — complexes", ("A", "EA", "EAact")),
     Panel(1, 2, "Stage 1 — free enzyme", ("E",)),
@@ -116,10 +118,11 @@ PANELS: tuple[Panel, ...] = (
     Panel(2, 3, "Output C", ("C",)),
 )
 
-# Rates span seven orders of magnitude and do *not* follow the concentration
-# groupings -- dA/dt peaks at ~1155 while dEAact/dt peaks at 0.077, though both
-# belong to stage 1.  So the rate panels are grouped strictly by magnitude
-# band, which needs two rows to keep every panel inside one band.
+# Rates do *not* follow the concentration groupings.  dA/dt and dEAact/dt both
+# belong to stage 1, yet they differ by 60x at the defaults and by four orders
+# of magnitude when the enzymes are in excess.  So the rate panels are grouped
+# strictly by magnitude band, which needs two rows to keep every panel inside
+# one band across the range of parameters a user might set.
 RATE_PANELS: tuple[Panel, ...] = (
     Panel(3, 1, "Binding burst — d/dt", ("A", "E", "EA")),
     Panel(3, 2, "Output production — d/dt", ("C",)),

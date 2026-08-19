@@ -42,8 +42,8 @@ atol = 1e-10
 
 [boundary]                       # the parameter set exactly as edited
 A0 = 20.0
-E0 = 10000.0
-F0 = 10000.0
+E0 = 35.0
+F0 = 40.0
 
 [kinetics]
 k1f = 0.0057762265046662105

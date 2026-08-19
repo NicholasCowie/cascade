@@ -133,11 +133,16 @@ def test_coincident_rate_curves_are_distinguished(single, rate_frame):
 
 def test_rate_axes_stay_linear_under_the_log_toggle(single, rate_frame):
     """Several rates are non-positive throughout, so a log axis would drop
-    them entirely.  They do wander a few parts in 1e15 above zero once A is
-    consumed and dips to -7e-14, which is solver noise, not a sign change."""
+    them entirely.
+
+    They wander a little above zero once the species they consume is exhausted
+    and its value hovers on solver noise -- dF/dt is -k4f*B*F, so with F spent
+    and B large that noise gets amplified.  Bound it relative to the peak
+    rather than absolutely: the excursions stay orders of magnitude below the
+    real signal, which is what makes them noise and not a sign change."""
     negative = rate_frame[["dA_dt", "dE_dt", "dF_dt"]]
     peak = negative.min().abs()
-    assert (negative.max() <= 1e-9 * peak).all(), "these rates never turn positive"
+    assert (negative.max() <= 1e-5 * peak).all(), "these rates never turn positive"
     assert (peak > 1e-3).all(), "and they are substantially negative"
 
     fig = timecourse_grid(single, rate_frame, y_type="log")

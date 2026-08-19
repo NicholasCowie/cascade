@@ -26,9 +26,12 @@ cd dist/cascade
   scipy      1.18.0
   pandas     3.0.5
   pyarrow    25.0.1
-  simulate   601 rows, C=7030.0
-  rates      dC/dt=38.33
+  modules    model, params, paths, plots, simulate, storage
+  simulate   601 rows, C=1155.8
+  rates      dC/dt=3.44
+  plots      18 + 36 + 1 traces
   save/load  .../results/selftest.toml (ok)
+  app        loaded, 4 tables rendered
 
 Self-test passed.
 ```

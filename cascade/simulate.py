@@ -39,9 +39,10 @@ RATE_COLUMNS: tuple[str, ...] = tuple(rate_column(name) for name in SPECIES)
 @dataclass(frozen=True)
 class SolverSettings:
     """LSODA is the closest analogue to MATLAB's ode15s: it switches between
-    stiff and non-stiff methods internally, which this system needs -- with the
-    default rates, A is consumed within milliseconds while C accrues over
-    minutes."""
+    stiff and non-stiff methods internally.  How stiff the system is depends on
+    the enzyme concentrations -- mild at the defaults, but at Cascade.m's own
+    E0 of 10000 pmol/L binding completes in milliseconds while C accrues over
+    minutes, and the solver has to span both."""
 
     method: str = "LSODA"
     rtol: float = 1e-8

@@ -38,8 +38,14 @@ Stage 1:  A binds enzyme E  →  EA  →  activates to EAact  →  makes messeng
 Stage 2:  B binds enzyme F  →  FB  →  activates to FBact  →  makes output C
 ```
 
-With the default settings, 20 pmol/L of A produces about 7000 pmol/L of C over
-ten minutes — roughly 350-fold amplification.
+With the default settings, 20 pM of A produces about 1160 pM of C over ten
+minutes — roughly 58-fold amplification.
+
+The two enzymes start at 35 and 40 pM, only a little above the 20 pM dose. That
+makes them **limiting**: there is not enough F to keep up, so the response
+saturates. Doubling the dose from 20 to 40 pM raises the output only from about
+1160 to 1220 pM, not to twice as much. Raise `E0` and `F0` if you want the
+cascade to run without that ceiling.
 
 ## The parameter tables
 
@@ -81,27 +87,33 @@ each substance is present over time:
 | **Stage 1** | A, EA, EAact | E | B |
 | **Stage 2** | FB, FBact | F | C |
 
-Each panel is separate because the amounts differ enormously — E sits near
-10,000 pmol/L while A starts at 20. Drawn on shared axes, the small curves would
-be flat lines on the bottom. The two stages are laid out to mirror each other,
+Each panel is separate because the amounts can differ enormously — B reaches
+about 680 pM while A starts at 20, and if you raise the enzymes to a large
+excess the gap becomes 500-fold. Drawn on shared axes the small curves would be
+flat lines along the bottom. The two stages are laid out to mirror each other,
 and matching colours mean matching roles: E and F are both the free enzyme, EA
 and FB both the complex.
 
 The **bottom two rows are rates of change** — how *fast* each amount is moving,
-rather than how much there is. These are grouped by size, because they range
-from about 1000 down to 0.0001 pmol/L per second. A positive rate means the
-substance is being made, negative means it is being consumed.
+rather than how much there is. These are grouped by size for the same reason:
+they span about 60-fold at the default settings, and far more once the enzymes
+are raised. A positive rate means the substance is being made, negative means it
+is being consumed.
 
 One curve is **dashed**: `dE/dt`, because it is mathematically identical to
 `dA/dt` and would otherwise be hidden underneath it.
 
 Some things worth knowing when the plots look surprising:
 
-- **A vanishes almost instantly.** Binding is fast; A is essentially gone within
-  the first second. That is the model behaving correctly.
-- **B stays tiny** (~0.03 pmol/L). It is consumed as fast as it is produced,
-  which is what makes the second stage run.
-- **C only ever increases.** Nothing in the model removes it.
+- **A is consumed early.** It halves in about 5 seconds and is essentially gone
+  by a minute, so most panels show it only as an initial drop.
+- **F runs out completely**, at around 150 seconds. That is the ceiling on the
+  whole cascade: once there is no free F left, no more B can be converted.
+- **B climbs to around 680 pM** and keeps climbing — far more than any other
+  intermediate. It accumulates precisely because F has run out and nothing is
+  consuming it any more.
+- **C only ever increases**, and flattens off as FBact stops growing. Nothing in
+  the model removes it.
 
 Every plot is interactive: hover for exact values, drag to zoom, double-click to
 reset.

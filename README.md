@@ -64,9 +64,9 @@ two stages mirroring each other:
 | **Stage 1** | A, EA, EAact | E | B |
 | **Stage 2** | FB, FBact | F | C |
 
-Rows 3–4 are rates of change, grouped strictly by magnitude — they span seven
-orders and do not follow the concentration groupings. A sweep adds its own
-overlay figure plus the dose-response curve.
+Rows 3–4 are rates of change, grouped strictly by magnitude, because they do not
+follow the concentration groupings. A sweep adds its own overlay figure plus the
+dose-response curve.
 
 ## Documentation
 
@@ -114,20 +114,28 @@ layout in [docs/file-format.md](docs/file-format.md).
 - **Seven states are integrated, not nine.** `E + EA + EAact` can never leave
   `E0`, and `F + FB + FBact` can never leave `F0` — both follow identically from
   the original equations — so E and F are recovered from those balances rather
-  than integrated. The residual drops from 5.5e-11 to 1.8e-12, and the two
-  systems agree to ~1e-8 relative. Derivation in [docs/model.md](docs/model.md).
+  than integrated. Their residual drops to 7e-15, one bit of double precision,
+  and the two systems agree to ~1e-8 relative. Derivation in
+  [docs/model.md](docs/model.md).
+- **The enzymes start at 35 and 40 pM, not the 10000 pmol/L of `Cascade.m`.**
+  Comparable to the 20 pM dose rather than in 500-fold excess, so they are
+  limiting: F is fully consumed by t ≈ 150 s, B accumulates instead of being
+  turned over, and the dose response saturates rather than running linear.
 - `ode15s` becomes `solve_ivp(method="LSODA")`, which likewise switches between
-  stiff and non-stiff methods. The system is genuinely stiff: A is consumed
-  within milliseconds while C accrues over minutes.
+  stiff and non-stiff methods. Stiffness depends on those enzyme levels — mild
+  at the defaults, severe at `Cascade.m`'s, where binding completes in
+  milliseconds while C accrues over minutes.
 - `Cascade.m:4` labels all ten rate constants `1/s`, but `k1f` and `k4f`
   multiply two concentrations, so the tables show `L/(pmol·s)`. The numbers are
   unchanged.
-- The MATLAB 2×2 grid put E (~10⁴ pmol/L) on the same axes as A, EA and EAact
-  (~10¹), flattening three curves onto the baseline. Every panel now spans a
-  single order of magnitude.
-- Rates are evaluated from the model, not by differencing the solution — at
-  t = 0 differencing over the 1 s output step reports −20 pmol/L/s against a
-  true −1155.
+- The MATLAB 2×2 grid put E on the same axes as A, EA and EAact — safe only
+  while they are the same size, and at `Cascade.m`'s `E0` it flattens three
+  curves onto the baseline. Every panel now spans a single order of magnitude,
+  whatever the enzyme concentrations.
+- Rates are evaluated from the model, not by differencing the solution, so they
+  stay exact however coarse the output grid. Differencing goes badly wrong for
+  any transient faster than one output step: at `E0 = 10000` it reports
+  −20 pmol/L/s against a true −1155.
 
 ## Tests
 
@@ -135,7 +143,7 @@ layout in [docs/file-format.md](docs/file-format.md).
 uv run pytest
 ```
 
-83 tests covering the ODE transcription, the state reduction against the
+85 tests covering the ODE transcription, the state reduction against the
 original nine-equation system, solver accuracy against a tight-tolerance
 reference, TOML round-tripping, the chart design rules, frozen-build path
 resolution, and the app itself — driven headlessly through Streamlit's

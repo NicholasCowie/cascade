@@ -15,12 +15,12 @@ unit = "pmol/L"
 description = "Initial analyte concentration"
 
 [boundary.E0]
-value = 10000.0
+value = 35.0
 unit = "pmol/L"
 description = "Initial concentration of enzyme E"
 
 [boundary.F0]
-value = 10000.0
+value = 40.0
 unit = "pmol/L"
 description = "Initial concentration of enzyme F"
 
