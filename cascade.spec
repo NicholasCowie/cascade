@@ -5,14 +5,21 @@
 # startup; one-directory starts in a couple of seconds.  Ship the folder zipped.
 # Switching is a matter of moving the binaries/datas into the EXE() call.
 
-from PyInstaller.utils.hooks import collect_all, copy_metadata
+from PyInstaller.utils.hooks import collect_all, collect_submodules, copy_metadata
 
 datas = [
     ("app.py", "."),                                  # the Streamlit script
     ("cascade/defaults.toml", "cascade"),             # parameter defaults
 ]
 binaries = []
-hiddenimports = [
+
+# The whole cascade package, whatever the import graph happens to reach.
+# app.py is bundled as *data*, so PyInstaller never analyses it and never sees
+# the modules it imports -- cascade.plots is imported only from there, and was
+# silently left out of the build until this line was added.
+hiddenimports = collect_submodules("cascade")
+
+hiddenimports += [
     # st.dataframe and st.data_editor serialise through pyarrow.  Without it
     # the four parameter tables and the data table render empty -- the app
     # looks broken rather than failing loudly.
