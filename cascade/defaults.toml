@@ -1,0 +1,116 @@
+# Default parameter set for the cascade model.
+#
+# Values are taken verbatim from Cascade.m.  Edit this file to change what the
+# app starts with -- values, units and descriptions all come from here.
+#
+# Note on units: Cascade.m labels all ten rate constants "1/s", but k1f and k4f
+# multiply a product of two concentrations, so they carry L/(pmol*s).  The
+# numbers are unchanged; only the labels are corrected.
+
+# --- Boundary conditions -----------------------------------------------------
+
+[boundary.A0]
+value = 20.0
+unit = "pmol/L"
+description = "Initial analyte concentration"
+
+[boundary.E0]
+value = 10000.0
+unit = "pmol/L"
+description = "Initial concentration of enzyme E"
+
+[boundary.F0]
+value = 10000.0
+unit = "pmol/L"
+description = "Initial concentration of enzyme F"
+
+# --- Kinetic parameters ------------------------------------------------------
+
+[kinetics.k1f]
+value = 0.0057762265046662105   # ln(2)/120
+unit = "L/(pmol*s)"
+description = "A + E -> EA association"
+
+[kinetics.k1b]
+value = 0.0
+unit = "1/s"
+description = "EA -> A + E dissociation"
+
+[kinetics.k2f]
+value = 0.003850817669777474    # ln(2)/180
+unit = "1/s"
+description = "EA -> EAact activation"
+
+[kinetics.k2b]
+value = 0.0
+unit = "1/s"
+description = "EAact -> EA deactivation"
+
+[kinetics.k3]
+value = 0.1
+unit = "1/s"
+description = "EAact produces messenger B"
+
+[kinetics.k4f]
+value = 0.0057762265046662105   # ln(2)/120
+unit = "L/(pmol*s)"
+description = "B + F -> FB association"
+
+[kinetics.k4b]
+value = 0.0
+unit = "1/s"
+description = "FB -> B + F dissociation"
+
+[kinetics.k5f]
+value = 0.003850817669777474    # ln(2)/180
+unit = "1/s"
+description = "FB -> FBact activation"
+
+[kinetics.k5b]
+value = 0.0
+unit = "1/s"
+description = "FBact -> FB deactivation"
+
+[kinetics.k6]
+value = 0.1
+unit = "1/s"
+description = "FBact produces output C"
+
+# --- Time --------------------------------------------------------------------
+
+[time.t_start]
+value = 0.0
+unit = "s"
+description = "Simulation start time"
+
+[time.t_end]
+value = 600.0
+unit = "s"
+description = "Simulation end time"
+
+[time.n_points]
+value = 601.0
+unit = "count"
+description = "Number of output timepoints (inclusive of both ends)"
+
+# --- A0 sweep ----------------------------------------------------------------
+
+[sweep.enabled]
+value = 0.0
+unit = "0 or 1"
+description = "Sweep A0 instead of running a single dose"
+
+[sweep.A0_start]
+value = 0.0
+unit = "pmol/L"
+description = "First A0 in the sweep"
+
+[sweep.A0_stop]
+value = 40.0
+unit = "pmol/L"
+description = "Last A0 in the sweep (inclusive)"
+
+[sweep.A0_step]
+value = 5.0
+unit = "pmol/L"
+description = "A0 increment"

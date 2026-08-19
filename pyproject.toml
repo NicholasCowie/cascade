@@ -1,0 +1,23 @@
+[project]
+name = "cascade"
+version = "0.1.0"
+description = "Two-stage enzymatic signal cascade simulator with a browser UI"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.14",
+    "pandas>=2.2",
+    "streamlit>=1.40",
+    "plotly>=5.24",
+    "tomli-w>=1.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
