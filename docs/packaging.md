@@ -41,9 +41,11 @@ Then `./cascade` to launch it for real.
 ## Cross-platform
 
 **PyInstaller cannot cross-compile.** A Windows `.exe` must be built on Windows
-and a macOS `.app` on macOS. `.github/workflows/build.yml` runs the matrix on
-`ubuntu-latest`, `windows-latest` and `macos-latest`, self-tests each bundle,
-and uploads it as an artifact.
+and a macOS build on macOS. `.github/workflows/build.yml` runs the matrix on
+`ubuntu-latest` and `windows-latest`, self-tests each bundle, and uploads it as
+an artifact. macOS is left out on purpose: its runner minutes are billed at ten
+times the Linux rate, which does not fit the free allowance on a private
+repository. Adding it back is one more entry in the matrix.
 
 macOS builds are unsigned, so Gatekeeper blocks them on first launch. The
 recipient needs to right-click → Open (not double-click) once, or the build must
@@ -54,13 +56,13 @@ be signed and notarised with an Apple Developer account.
 This is the only route to a Windows `.exe` from a Linux checkout, and it needs
 no Windows machine at any point.
 
-**Every push to `main`** produces all three bundles. Open the repository's
-**Actions** tab, pick the run, and download `cascade-windows` (or `-linux`,
-`-macos`) from the **Artifacts** section at the bottom of its summary page.
-Artifacts last 30 days and can only be downloaded by someone signed in to
+**Every push to `main`** produces both bundles. Open the repository's
+**Actions** tab, pick the run, and download `cascade-windows` (or
+`cascade-linux`) from the **Artifacts** section at the bottom of its summary
+page. Artifacts last 7 days and can only be downloaded by someone signed in to
 GitHub.
 
-**Pushing a `v*` tag** additionally attaches the same three zips to a GitHub
+**Pushing a `v*` tag** additionally attaches the same zips to a GitHub
 Release:
 
 ```sh
@@ -70,6 +72,9 @@ git push origin v0.1.0
 
 Release assets on a public repository download from the link alone, with no
 GitHub account — which is what makes a build sendable to whoever asked for it.
+While the repository is private they still require a signed-in account with
+access, so handing a build to an outsider means either making the repo public
+or sending them the zip directly.
 
 Each bundle is zipped **on the runner that built it**, not by the upload step:
 `actions/upload-artifact` dereferences symlinks and drops the executable bit,

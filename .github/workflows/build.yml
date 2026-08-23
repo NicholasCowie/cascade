@@ -1,8 +1,13 @@
 name: Build
 
 # PyInstaller cannot cross-compile: a Windows .exe has to be produced on
-# Windows and a macOS .app on macOS.  This matrix is the only practical way to
-# produce all three from one machine.
+# Windows and a macOS build on macOS.  This matrix is the only practical way to
+# produce them from one machine.
+#
+# macOS is deliberately not in it.  On a private repository the free allowance
+# is 2,000 minutes a month, and macOS minutes are billed at ten times the Linux
+# rate -- one macOS leg costs more than the other two together.  Adding it back
+# is one more entry in the matrix below.
 on:
   push:
     branches: [main]
@@ -33,9 +38,6 @@ jobs:
           - os: windows-latest
             artifact: cascade-windows
             exe: cascade.exe
-          - os: macos-latest
-            artifact: cascade-macos
-            exe: cascade
     runs-on: ${{ matrix.os }}
     # A hung PyInstaller would otherwise run to the six-hour default, and
     # Windows minutes are billed at twice the rate of Linux.
@@ -85,7 +87,9 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}.zip
-          retention-days: 30
+          # Short, because the free artifact storage on a private repo is
+          # 500 MB and each bundle zips to roughly 150-200 MB.
+          retention-days: 7
 
   # A run artifact can only be downloaded by someone signed in to GitHub.  A
   # release asset on a public repository can be downloaded from the link

@@ -33,8 +33,8 @@ cd dist/cascade && ./cascade --selftest && ./cascade
 
 PyInstaller cannot cross-compile, so a Windows `.exe` has to be built on
 Windows. `.github/workflows/build.yml` does that on GitHub's runners: every
-push to `main` leaves `cascade-windows`, `-linux` and `-macos` bundles on the
-run's Actions page, and pushing a `v*` tag attaches the same three zips to a
+push to `main` leaves `cascade-windows` and `cascade-linux` bundles on the
+run's Actions page, and pushing a `v*` tag attaches the same zips to a
 release.
 
 ## Using it
