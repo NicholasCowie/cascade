@@ -31,6 +31,12 @@ uv run pyinstaller cascade.spec --noconfirm
 cd dist/cascade && ./cascade --selftest && ./cascade
 ```
 
+PyInstaller cannot cross-compile, so a Windows `.exe` has to be built on
+Windows. `.github/workflows/build.yml` does that on GitHub's runners: every
+push to `main` leaves `cascade-windows`, `-linux` and `-macos` bundles on the
+run's Actions page, and pushing a `v*` tag attaches the same three zips to a
+release.
+
 ## Using it
 
 Four editable tables, each showing the unit and description of every entry:

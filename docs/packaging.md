@@ -49,6 +49,39 @@ macOS builds are unsigned, so Gatekeeper blocks them on first launch. The
 recipient needs to right-click → Open (not double-click) once, or the build must
 be signed and notarised with an Apple Developer account.
 
+### Getting a build without a machine to build it on
+
+This is the only route to a Windows `.exe` from a Linux checkout, and it needs
+no Windows machine at any point.
+
+**Every push to `main`** produces all three bundles. Open the repository's
+**Actions** tab, pick the run, and download `cascade-windows` (or `-linux`,
+`-macos`) from the **Artifacts** section at the bottom of its summary page.
+Artifacts last 30 days and can only be downloaded by someone signed in to
+GitHub.
+
+**Pushing a `v*` tag** additionally attaches the same three zips to a GitHub
+Release:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Release assets on a public repository download from the link alone, with no
+GitHub account — which is what makes a build sendable to whoever asked for it.
+
+Each bundle is zipped **on the runner that built it**, not by the upload step:
+`actions/upload-artifact` dereferences symlinks and drops the executable bit,
+which would leave the Linux and macOS binaries unable to start. The zip expands
+to a `cascade/` folder, the same shape as a local `dist/cascade`. The runner
+also deletes the `results/` directory the self-test writes, so the bundle
+arrives without a saved run already in the picker.
+
+The self-test step is the gate: a leg that builds but cannot import pyarrow, or
+that is missing a module, fails there rather than shipping an artifact that
+looks fine and renders empty tables.
+
 ## Design decisions
 
 ### One-directory, not one-file

@@ -29,11 +29,17 @@ jobs:
         include:
           - os: ubuntu-latest
             artifact: cascade-linux
+            exe: cascade
           - os: windows-latest
             artifact: cascade-windows
+            exe: cascade.exe
           - os: macos-latest
             artifact: cascade-macos
+            exe: cascade
     runs-on: ${{ matrix.os }}
+    # A hung PyInstaller would otherwise run to the six-hour default, and
+    # Windows minutes are billed at twice the rate of Linux.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -52,10 +58,53 @@ jobs:
       - name: Self-test the bundle
         working-directory: dist/cascade
         shell: bash
-        run: ./cascade --selftest
+        run: ./${{ matrix.exe }} --selftest
+
+      # The self-test saves a run beside the executable, exactly as the app
+      # does.  Ship a clean bundle rather than one that arrives with somebody
+      # else's result already in the picker.
+      - name: Clear the self-test's saved run
+        shell: bash
+        run: rm -rf dist/cascade/results
+
+      # Zipped here, on the machine that built it, rather than left to
+      # upload-artifact: the upload dereferences symlinks and drops the
+      # executable bit, which would leave the Linux and macOS bundles unable
+      # to start.  It also turns a 3,500-file upload into a single file.
+      - name: Package (Unix)
+        if: runner.os != 'Windows'
+        working-directory: dist
+        run: zip -qry "../${{ matrix.artifact }}.zip" cascade
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path dist\cascade -DestinationPath ${{ matrix.artifact }}.zip
 
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: dist/cascade
+          path: ${{ matrix.artifact }}.zip
           retention-days: 30
+
+  # A run artifact can only be downloaded by someone signed in to GitHub.  A
+  # release asset on a public repository can be downloaded from the link
+  # alone, which is what makes a build sendable to whoever asked for it.
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write          # create the release and attach the bundles
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: bundles        # -> bundles/cascade-windows/cascade-windows.zip
+
+      # gh is preinstalled on every GitHub-hosted runner.  GH_REPO is set
+      # because this job checks nothing out, so gh has no repository to infer.
+      - name: Attach the bundles to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes bundles/*/*.zip
