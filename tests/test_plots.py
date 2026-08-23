@@ -120,6 +120,59 @@ def test_multi_series_curves_are_directly_labelled(single, rate_frame):
                 assert expected in labels, f"{expected} has no direct label"
 
 
+def _panel_axis(panel) -> str:
+    """The yref make_subplots gives a panel, row-major from the top left."""
+    index = (panel.row - 1) * GRID_COLS + panel.col
+    return "y" if index == 1 else f"y{index}"
+
+
+@pytest.mark.parametrize("y_type", ["linear", "log"])
+def test_direct_labels_read_in_the_same_order_as_their_curves(
+    single, rate_frame, y_type
+):
+    """A label at a line end has to read as belonging to that line.
+
+    A ends at 0 with EA barely above it, so a label hung below EA lands beside
+    A and the two read as swapped.  Offsetting each label by a tenth of its
+    panel -- about what 11px of text takes up in a 200px panel -- and sorting
+    by where it actually lands catches that: the labels have to come out in
+    the same order as the curves they name.  Their coordinates are checked in
+    the space the axis draws, since a log axis positions them in decades.
+    """
+    from math import log10
+
+    fig = timecourse_grid(single, rate_frame, y_type=y_type)
+    annotations = {a.text: a for a in fig.layout.annotations if a.yref != "paper"}
+
+    for panel in PANELS + RATE_PANELS:
+        if len(panel.species) < 2:
+            continue
+        is_rate = panel in RATE_PANELS
+        log_axis = y_type == "log" and not is_rate
+        frame = rate_frame if is_rate else single
+
+        ends = {}
+        for name in panel.species:
+            end = float(frame[rate_column(name) if is_rate else name].iloc[-1])
+            if log_axis and end <= 0:
+                continue  # a log axis cannot show it, so it goes unlabelled
+            ends[f"d{name}/dt" if is_rate else name] = log10(end) if log_axis else end
+
+        for label, position in ends.items():
+            drawn = annotations[label]
+            assert drawn.yref == _panel_axis(panel), f"{label} is on the wrong panel"
+            assert drawn.y == pytest.approx(position), f"{label} sits off its line"
+
+        margin = 0.1 * (max(ends.values()) - min(ends.values()))
+        placed = {
+            label: position + (margin if annotations[label].yanchor == "bottom" else -margin)
+            for label, position in ends.items()
+        }
+        assert sorted(ends, key=ends.get) == sorted(placed, key=placed.get), (
+            f"{panel.title}: the labels do not read in the order of their curves"
+        )
+
+
 def test_coincident_rate_curves_are_distinguished(single, rate_frame):
     """dA/dt and dE/dt lie exactly on top of each other, so one is dashed."""
     fig = timecourse_grid(single, rate_frame)

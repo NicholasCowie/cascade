@@ -159,6 +159,37 @@ def ramp_colors(n: int, theme: str) -> list[str]:
     return [ramp[int(round(i))] for i in idx]
 
 
+def label_sides(ends) -> list[str]:
+    """Which side of its own line each direct label sits on, as a ``yanchor``.
+
+    ``"bottom"`` puts the text above the point, ``"top"`` below it.  The side
+    has to follow where the curves actually end rather than their order in the
+    panel: at the defaults A ends at 0 with EA only 2 pmol/L above it, and
+    alternating by order drew A's label above EA's, so the two read as
+    swapped.  Each label instead takes the wider of the gaps either side of
+    its own line, which keeps it nearer that line than to any other.  Curves
+    that end level -- dA/dt and dE/dt coincide for every parameter value --
+    have no gap on either side, so they split, one up and one down.
+    """
+    if not ends:
+        return []
+
+    order = sorted(range(len(ends)), key=lambda i: ends[i])
+    # Stands in for the room outside the outermost curves: the axis pads the
+    # data range by roughly this much.
+    pad = 0.05 * (ends[order[-1]] - ends[order[0]])
+
+    sides = ["bottom"] * len(ends)
+    for rank, index in enumerate(order):
+        below = ends[index] - ends[order[rank - 1]] if rank else pad
+        above = ends[order[rank + 1]] - ends[index] if rank + 1 < len(order) else pad
+        if below == above:  # every curve level: nothing to go on but the order
+            sides[index] = "bottom" if rank % 2 == 0 else "top"
+        else:
+            sides[index] = "top" if below > above else "bottom"
+    return sides
+
+
 def _style(fig: go.Figure, theme: str, height: int, y_type: str | None = None) -> go.Figure:
     tokens = THEMES[theme]
     fig.update_layout(
@@ -253,9 +284,12 @@ def timecourse_grid(
         if source is None or not len(source):
             continue
 
+        columns = [rate_column(s) if is_rate else s for s in panel.species]
+        labels = [f"d{s}/dt" if is_rate else s for s in panel.species]
+
         for position, species in enumerate(panel.species):
-            column = rate_column(species) if is_rate else species
-            label = f"d{species}/dt" if is_rate else species
+            column = columns[position]
+            label = labels[position]
             color = species_color(species, theme)
 
             # One legend entry per species, taken the first time it appears in
@@ -288,17 +322,29 @@ def timecourse_grid(
                 col=panel.col,
             )
 
-            if len(panel.species) > 1:
-                # A direct label at the line end, so identity never rests on
-                # colour alone.  Anchors alternate to keep close curves legible.
+        if len(panel.species) > 1:
+            # A direct label at each line end, so identity never rests on
+            # colour alone.  Plotly places an annotation on a log axis in
+            # decades, not in data units, so both the coordinate and the side
+            # it sits on are worked out in the space the axis actually draws:
+            # rows 3-4 are always linear, rows 1-2 follow the user's choice.
+            log_axis = y_type == "log" and not is_rate
+            ends = [float(source[column].iloc[-1]) for column in columns]
+            drawn = [
+                (position, np.log10(end) if log_axis else end)
+                for position, end in enumerate(ends)
+                if end > 0 or not log_axis  # a log axis cannot show <= 0
+            ]
+
+            for (position, y), side in zip(drawn, label_sides([y for _, y in drawn])):
                 fig.add_annotation(
                     x=float(source[TIME_COLUMN].iloc[-1]),
-                    y=float(source[column].iloc[-1]),
-                    text=label,
+                    y=y,
+                    text=labels[position],
                     showarrow=False,
                     xanchor="right",
-                    yanchor="bottom" if position % 2 == 0 else "top",
-                    yshift=4 if position % 2 == 0 else -4,
+                    yanchor=side,
+                    yshift=4 if side == "bottom" else -4,
                     font=dict(color=tokens["text_secondary"], size=11),
                     row=panel.row,
                     col=panel.col,
