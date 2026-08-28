@@ -43,9 +43,9 @@ Then `./cascade` to launch it for real.
 **PyInstaller cannot cross-compile.** A Windows `.exe` must be built on Windows
 and a macOS build on macOS. `.github/workflows/build.yml` runs the matrix on
 `ubuntu-latest` and `windows-latest`, self-tests each bundle, and uploads it as
-an artifact. macOS is left out on purpose: its runner minutes are billed at ten
-times the Linux rate, which does not fit the free allowance on a private
-repository. Adding it back is one more entry in the matrix.
+an artifact. macOS is left out on purpose, though no longer for cost — minutes
+are free on a public repository. It is signing: see below. Adding it back is one
+more entry in the matrix, plus that decision.
 
 macOS builds are unsigned, so Gatekeeper blocks them on first launch. The
 recipient needs to right-click → Open (not double-click) once, or the build must

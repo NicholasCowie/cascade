@@ -11,7 +11,6 @@ next to itself, so avoid opening it from inside the zip file.
 | | |
 |---|---|
 | **Windows** | Open the folder and double-click **`cascade.exe`** |
-| **macOS** | **Right-click** `cascade` and choose **Open**, then confirm |
 | **Linux** | Double-click `cascade`, or run `./cascade` |
 
 A small black console window appears — leave it open, it *is* the program — and
@@ -21,12 +20,9 @@ address like `http://localhost:8501`; paste that into your browser.
 **Closing the console window quits the simulator.** Closing the browser tab
 alone does not.
 
-> **macOS:** the first launch shows a warning because the build isn't signed by
-> Apple. Right-click → Open gives you an "Open anyway" button; double-clicking
-> does not. You only need to do this once.
-
-> **Windows:** SmartScreen may show "Windows protected your PC" for the same
-> reason. Click **More info** → **Run anyway**.
+> **Windows:** SmartScreen may show "Windows protected your PC", because the
+> build isn't signed. Click **More info** → **Run anyway**. You only need to do
+> this once.
 
 ## What it simulates
 
