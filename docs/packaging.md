@@ -70,11 +70,11 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Release assets on a public repository download from the link alone, with no
-GitHub account — which is what makes a build sendable to whoever asked for it.
-While the repository is private they still require a signed-in account with
-access, so handing a build to an outsider means either making the repo public
-or sending them the zip directly.
+The repository is public, so release assets download from the link alone, with
+no GitHub account — which is what makes a build sendable to whoever asked for
+it. Run artifacts are the opposite: they always require a signed-in account,
+whatever the repository's visibility. That is the whole reason to cut a tag
+rather than point somebody at the Actions tab.
 
 Each bundle is zipped **on the runner that built it**, not by the upload step:
 `actions/upload-artifact` dereferences symlinks and drops the executable bit,

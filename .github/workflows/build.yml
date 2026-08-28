@@ -4,10 +4,12 @@ name: Build
 # Windows and a macOS build on macOS.  This matrix is the only practical way to
 # produce them from one machine.
 #
-# macOS is deliberately not in it.  On a private repository the free allowance
-# is 2,000 minutes a month, and macOS minutes are billed at ten times the Linux
-# rate -- one macOS leg costs more than the other two together.  Adding it back
-# is one more entry in the matrix below.
+# macOS is deliberately not in it, but no longer for cost: minutes are free on
+# a public repository.  The reason now is signing.  An unsigned macOS build is
+# blocked by Gatekeeper on first launch, so shipping one means talking every
+# recipient through right-click -> Open, or paying for an Apple Developer
+# account to notarise it.  Adding it back is one more entry in the matrix
+# below, plus that decision.
 on:
   push:
     branches: [main]
@@ -87,8 +89,9 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}.zip
-          # Short, because the free artifact storage on a private repo is
-          # 500 MB and each bundle zips to roughly 150-200 MB.
+          # Short, because each bundle zips to roughly 150-200 MB and these
+          # are only the interim per-push builds.  A tagged release keeps its
+          # assets indefinitely, so nothing worth keeping expires with these.
           retention-days: 7
 
   # A run artifact can only be downloaded by someone signed in to GitHub.  A
